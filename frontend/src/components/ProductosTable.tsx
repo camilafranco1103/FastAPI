@@ -1,25 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import api from '../api/axios'
-
-interface Producto {
-  id: number
-  nombre: string
-  descripcion: string
-  es_alergeno: boolean
-  categorias: { id: number; nombre: string }[]
-  ingredientes: { id: number; nombre: string }[]
-}
-
-interface Categoria {
-  id: number
-  nombre: string
-}
-
-interface Ingrediente {
-  id: number
-  nombre: string
-}
+import type { Producto, Categoria, Ingrediente } from '../models'
 
 function ProductosTable() {
   const queryClient = useQueryClient()
@@ -32,11 +14,13 @@ function ProductosTable() {
     categorias_ids: [] as number[],
     ingredientes_ids: [] as number[]
   })
+  const [page, setPage] = useState(0)
+  const limit = 10
 
   const { data: productos, isLoading } = useQuery({
-    queryKey: ['productos'],
+    queryKey: ['productos', page],
     queryFn: async () => {
-      const response = await api.get('/productos')
+      const response = await api.get('/productos', { params: { skip: page * limit, limit } })
       return response.data as Producto[]
     }
   })
@@ -44,7 +28,7 @@ function ProductosTable() {
   const { data: categorias } = useQuery({
     queryKey: ['categorias'],
     queryFn: async () => {
-      const response = await api.get('/categorias')
+      const response = await api.get('/categorias', { params: { limit: 100 } })
       return response.data as Categoria[]
     }
   })
@@ -52,10 +36,14 @@ function ProductosTable() {
   const { data: ingredientes } = useQuery({
     queryKey: ['ingredientes'],
     queryFn: async () => {
-      const response = await api.get('/ingredientes')
+      const response = await api.get('/ingredientes', { params: { limit: 100 } })
       return response.data as Ingrediente[]
     }
   })
+
+  const handleError = (error: any) => {
+    alert(error.response?.data?.detail || 'Ocurrió un error inesperado')
+  }
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -65,7 +53,8 @@ function ProductosTable() {
       queryClient.invalidateQueries({ queryKey: ['productos'] })
       setShowModal(false)
       setFormData({ nombre: '', descripcion: '', es_alergeno: false, categorias_ids: [], ingredientes_ids: [] })
-    }
+    },
+    onError: handleError
   })
 
   const updateMutation = useMutation({
@@ -77,7 +66,8 @@ function ProductosTable() {
       setShowModal(false)
       setEditingProducto(null)
       setFormData({ nombre: '', descripcion: '', es_alergeno: false, categorias_ids: [], ingredientes_ids: [] })
-    }
+    },
+    onError: handleError
   })
 
   const deleteMutation = useMutation({
@@ -86,7 +76,8 @@ function ProductosTable() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['productos'] })
-    }
+    },
+    onError: handleError
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -140,54 +131,73 @@ function ProductosTable() {
     }))
   }
 
-  if (isLoading) return <div>Cargando...</div>
+  if (isLoading) return (
+    <div className="flex items-center justify-center py-20 text-slate-400 text-sm">
+      Cargando...
+    </div>
+  )
 
   return (
     <div>
-      <button
-        onClick={openCreateModal}
-        className="mb-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-      >
-        + Nuevo Producto
-      </button>
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-xl font-semibold text-slate-800">Productos</h2>
+        <button
+          onClick={openCreateModal}
+          className="bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+        >
+          + Nuevo producto
+        </button>
+      </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border">
-          <thead className="bg-gray-100">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table className="min-w-full">
+          <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="px-4 py-2 border">ID</th>
-              <th className="px-4 py-2 border">Nombre</th>
-              <th className="px-4 py-2 border">Descripción</th>
-              <th className="px-4 py-2 border">Alérgeno</th>
-              <th className="px-4 py-2 border">Categorías</th>
-              <th className="px-4 py-2 border">Ingredientes</th>
-              <th className="px-4 py-2 border">Acciones</th>
+              {['ID', 'Nombre', 'Descripción', 'Alérgeno', 'Categorías', 'Ingredientes', 'Acciones'].map(col => (
+                <th key={col} className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {col}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-50">
             {productos?.map((prod) => (
-              <tr key={prod.id}>
-                <td className="px-4 py-2 border">{prod.id}</td>
-                <td className="px-4 py-2 border">{prod.nombre}</td>
-                <td className="px-4 py-2 border">{prod.descripcion}</td>
-                <td className="px-4 py-2 border">{prod.es_alergeno ? 'Sí' : 'No'}</td>
-                <td className="px-4 py-2 border">
-                  {prod.categorias.map(c => c.nombre).join(', ') || 'Sin categorías'}
+              <tr key={prod.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-5 py-3 text-sm text-gray-400">{prod.id}</td>
+                <td className="px-5 py-3 text-sm font-medium text-slate-700">{prod.nombre}</td>
+                <td className="px-5 py-3 text-sm text-slate-500">{prod.descripcion || '—'}</td>
+                <td className="px-5 py-3">
+                  {prod.es_alergeno ? (
+                    <span className="inline-flex text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
+                      Sí
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-300">No</span>
+                  )}
                 </td>
-                <td className="px-4 py-2 border">
-                  {prod.ingredientes.map(i => i.nombre).join(', ') || 'Sin ingredientes'}
+                <td className="px-5 py-3 text-sm text-slate-500">
+                  {prod.categorias.length > 0
+                    ? prod.categorias.map(c => c.nombre).join(', ')
+                    : <span className="text-gray-300">—</span>
+                  }
                 </td>
-                <td className="px-4 py-2 border whitespace-nowrap">
-                  <div className="flex gap-2">
+                <td className="px-5 py-3 text-sm text-slate-500">
+                  {prod.ingredientes.length > 0
+                    ? prod.ingredientes.map(i => i.nombre).join(', ')
+                    : <span className="text-gray-300">—</span>
+                  }
+                </td>
+                <td className="px-5 py-3">
+                  <div className="flex gap-3">
                     <button
                       onClick={() => handleEdit(prod)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                      className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
                     >
                       Editar
                     </button>
                     <button
                       onClick={() => handleDelete(prod.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                      className="text-sm text-rose-500 hover:text-rose-700 font-medium transition-colors"
                     >
                       Eliminar
                     </button>
@@ -195,96 +205,122 @@ function ProductosTable() {
                 </td>
               </tr>
             ))}
+            {productos?.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-5 py-10 text-center text-sm text-gray-400">
+                  No hay productos registrados.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
+      {/* Paginación fija */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-8 py-3 flex items-center justify-between z-40">
+        <span className="text-sm text-gray-400">Página {page + 1}</span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPage(p => p - 1)}
+            disabled={page === 0}
+            className="px-4 py-1.5 text-sm border border-gray-200 rounded-lg text-slate-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            ← Anterior
+          </button>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={(productos?.length ?? 0) < limit}
+            className="px-4 py-1.5 text-sm border border-gray-200 rounded-lg text-slate-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Siguiente →
+          </button>
+        </div>
+      </div>
+
+      {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center overflow-y-auto">
-          <div className="bg-white p-6 rounded-lg w-[600px] my-8">
-            <h3 className="text-xl font-bold mb-4">
-              {editingProducto ? 'Editar Producto' : 'Nuevo Producto'}
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-slate-800 mb-5">
+              {editingProducto ? 'Editar producto' : 'Nuevo producto'}
             </h3>
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="block mb-2">Nombre:</label>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Nombre</label>
                 <input
                   type="text"
                   value={formData.nombre}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  className="w-full border px-3 py-2 rounded"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent"
                   required
                 />
               </div>
-              <div className="mb-4">
-                <label className="block mb-2">Descripción:</label>
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Descripción</label>
                 <input
                   type="text"
                   value={formData.descripcion}
                   onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                  className="w-full border px-3 py-2 rounded"
-                  required
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:border-transparent"
                 />
               </div>
-              <div className="mb-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.es_alergeno}
-                    onChange={(e) => setFormData({ ...formData, es_alergeno: e.target.checked })}
-                    className="mr-2"
-                  />
-                  Es Alérgeno
-                </label>
-              </div>
-              
-              <div className="mb-4">
-                <label className="block mb-2 font-semibold">Categorías:</label>
-                <div className="border p-3 rounded max-h-32 overflow-y-auto">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.es_alergeno}
+                  onChange={(e) => setFormData({ ...formData, es_alergeno: e.target.checked })}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm text-slate-600">Es alérgeno</span>
+              </label>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-2">Categorías</label>
+                <div className="border border-gray-200 rounded-lg p-3 max-h-32 overflow-y-auto space-y-2">
                   {categorias?.map(cat => (
-                    <label key={cat.id} className="flex items-center mb-2">
+                    <label key={cat.id} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.categorias_ids.includes(cat.id)}
                         onChange={() => toggleCategoria(cat.id)}
-                        className="mr-2"
+                        className="rounded border-gray-300"
                       />
-                      {cat.nombre}
+                      <span className="text-sm text-slate-600">{cat.nombre}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className="mb-4">
-                <label className="block mb-2 font-semibold">Ingredientes:</label>
-                <div className="border p-3 rounded max-h-32 overflow-y-auto">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-2">Ingredientes</label>
+                <div className="border border-gray-200 rounded-lg p-3 max-h-32 overflow-y-auto space-y-2">
                   {ingredientes?.map(ing => (
-                    <label key={ing.id} className="flex items-center mb-2">
+                    <label key={ing.id} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData.ingredientes_ids.includes(ing.id)}
                         onChange={() => toggleIngrediente(ing.id)}
-                        className="mr-2"
+                        className="rounded border-gray-300"
                       />
-                      {ing.nombre}
+                      <span className="text-sm text-slate-600">{ing.nombre}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-2">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="bg-gray-300 px-4 py-2 rounded"
+                  className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                  className="px-4 py-2 text-sm font-medium bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
                 >
-                  {editingProducto ? 'Actualizar' : 'Crear'}
+                  {editingProducto ? 'Guardar cambios' : 'Crear'}
                 </button>
               </div>
             </form>

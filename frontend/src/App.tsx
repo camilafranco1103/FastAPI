@@ -1,42 +1,24 @@
-import { Routes, Route, Link } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
+import Navbar from './components/Navbar'
 import CategoriasPage from './pages/CategoriasPage'
 import IngredientesPage from './pages/IngredientesPage'
 import ProductosPage from './pages/ProductosPage'
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Navbar */}
-      <nav className="bg-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between h-16">
-            <div className="flex space-x-8">
-              <Link to="/" className="flex items-center text-gray-700 hover:text-gray-900">
-                Inicio
-              </Link>
-              <Link to="/categorias" className="flex items-center text-gray-700 hover:text-gray-900">
-                Categorías
-              </Link>
-              <Link to="/ingredientes" className="flex items-center text-gray-700 hover:text-gray-900">
-                Ingredientes
-              </Link>
-              <Link to="/productos" className="flex items-center text-gray-700 hover:text-gray-900">
-                Productos
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
 
-      {/* Contenido */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 pb-24">
         <Routes>
           <Route path="/" element={
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                 Parcial Programación IV
+            <div className="mt-12 text-center">
+              <h1 className="text-3xl font-semibold text-slate-800">
+                Sistema de gestión
               </h1>
-              
+              <p className="mt-2 text-slate-500 text-sm">
+                Administrá categorías, ingredientes y productos desde el menú superior.
+              </p>
             </div>
           } />
           <Route path="/categorias" element={<CategoriasPage />} />

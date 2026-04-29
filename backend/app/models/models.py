@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 __all__ = ["Categoria", "Ingrediente", "Producto", "ProductoCategoria", "ProductoIngrediente"]
@@ -17,7 +17,7 @@ class ProductoCategoria(SQLModel, table=True):
     producto_id: int = Field(foreign_key="producto.id", primary_key=True)
     categoria_id: int = Field(foreign_key="categoria.id", primary_key=True)
     es_principal: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ========================================
@@ -44,8 +44,8 @@ class Categoria(SQLModel, table=True):
     stock_disponible: bool = Field(default=True)
     
     # Auditoría
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     deleted_at: Optional[datetime] = Field(default=None)
     
     # Relaciones
@@ -66,8 +66,8 @@ class Ingrediente(SQLModel, table=True):
     descripcion: Optional[str] = Field(default=None)
     
     # Auditoría
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     deleted_at: Optional[datetime] = Field(default=None)
     
     # Relaciones
@@ -88,8 +88,8 @@ class Producto(SQLModel, table=True):
     es_alergeno: bool = Field(default=False)
     
     # Auditoría
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     deleted_at: Optional[datetime] = Field(default=None)
     
     # Relaciones N:N
