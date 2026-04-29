@@ -3,7 +3,7 @@
 SISTEMA DE GESTIÓN DE PRODUCTOS ALIMENTICIOS
 ================================================================================
 
-Aplicación fullstack desarrollada como proyecto final para Programación IV.
+Aplicación fullstack desarrollada como parcial para Programación IV.
 Sistema de gestión con relaciones complejas entre entidades (1:N y N:N),
 implementando CRUD completo, validaciones, y patrón de soft delete.
 
@@ -11,7 +11,7 @@ implementando CRUD completo, validaciones, y patrón de soft delete.
 AUTORA
 ================================================================================
 
-Camila - Programación IV - 2026
+Camila Franco - Programación IV - 2026
 
 ================================================================================
 TECNOLOGÍAS UTILIZADAS
