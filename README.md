@@ -1,4 +1,4 @@
-**Link del video:** https://drive.google.com/file/d/16Cs_nmNlKExpXMZFreCBjHl7PdLYdf1p/view?usp=drive_link
+
 ================================================================================
 SISTEMA DE GESTIÓN DE PRODUCTOS ALIMENTICIOS
 ================================================================================
